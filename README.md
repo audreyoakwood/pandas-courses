@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# PandaCourses 🐼🛒
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+PWA de **budget courses partagé** et de **liste de courses** pour Audrey & Tom.
 
-Currently, two official plugins are available:
+Application web installable (PWA), 100 % front-end, sans build : un seul `index.html`
+autonome + un manifeste, un service worker (hors-ligne) et les icônes. Les données
+sont stockées localement dans le navigateur (`localStorage`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Fonctionnalités
 
-## React Compiler
+- **Accueil** : total du mois, équilibre 50/50 (qui doit combien à qui), bloc
+  « À ne pas oublier » (courses importantes), anneau de répartition Audrey/Tom,
+  courbe d'évolution sur l'année, dépenses récentes.
+- **Dépenses** : navigation mois par mois. Modification / suppression possibles
+  uniquement sur le **mois en cours** (les mois passés sont en lecture seule).
+- **Liste de courses** : ajout d'articles, tag magasin (couleur par enseigne),
+  filtre par magasin, marquage « important » (★), coche des articles pris.
+- **Année** : récap mensuel (Audrey / Tom / total / écart), lignes dépliables
+  et suivi des virements de compensation (« virement fait »).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Lancer en local
 
-## Expanding the Oxlint configuration
+Servir le dossier avec n'importe quel serveur statique, par ex. :
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+python3 -m http.server 8080
+# puis ouvrir http://localhost:8080
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Un service worker nécessite `http(s)` (ou `localhost`) pour s'activer.
+
+## Structure
+
+| Fichier | Rôle |
+| --- | --- |
+| `index.html` | L'application complète (HTML + CSS + JS) |
+| `manifest.webmanifest` | Métadonnées PWA (nom, couleurs, icônes) |
+| `sw.js` | Service worker — cache hors-ligne |
+| `icon.svg`, `icon-192.png`, `icon-512.png` | Icônes (logo panda + chariot) |
