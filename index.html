@@ -574,10 +574,15 @@ const SEED=[
   {id:81,store:'Leclerc, Picard',amount:100,partner:1,date:'2026-09-04'},{id:82,store:'Bioveyre',amount:40,partner:0,date:'2026-09-08'},
   {id:83,store:'Malongo',amount:65,partner:0,date:'2026-09-14'},{id:84,store:'Bioveyre',amount:50,partner:0,date:'2026-09-16'},
   {id:85,store:'Leclerc',amount:40,partner:1,date:'2026-09-19'},{id:86,store:'Bioveyre',amount:35,partner:0,date:'2026-09-21'},
+  {id:87,store:'Picard',amount:65,partner:1,date:'2026-09-25'},{id:88,store:'Carrefour',amount:60,partner:0,date:'2026-09-25'},
+  {id:89,store:'Leclerc',amount:70,partner:1,date:'2026-09-27'},{id:90,store:'Autres',amount:220,partner:0,date:'2026-09-28'},
+  {id:91,store:'Bioveyre',amount:65,partner:0,date:'2026-09-30'},
 ];
 
 // Version des données importées depuis le Google Sheet : à incrémenter à chaque nouvel import
-const SEED_V=3;
+const SEED_V=4;
+// Dépenses ajoutées par import depuis le Sheet, par version (pour les envoyer aussi dans l'espace partagé)
+const SEED_NEW={4:[87,88,89,90,91]};
 // Liste de courses importée (Google Keep, 1er octobre 2026)
 const LIST_SEED=[
   ['Tube 17*66',''],['Id Scratch',''],['Litière lapin',''],['Lait',''],['Pain tranche',''],
@@ -594,7 +599,7 @@ function load(){const d=localStorage.getItem('pandacourses');if(d)st=JSON.parse(
 function mergeSeed(){
   if((st.seedV||1)>=SEED_V)return;
   const k=e=>e.date+'|'+e.store+'|'+e.amount+'|'+e.partner,have=new Set(st.exp.map(k));
-  SEED.forEach(e=>{if(!have.has(k(e))){st.exp.push({...e,id:st.nextId++});have.add(k(e));}});
+  SEED.forEach(e=>{if(!have.has(k(e))){st.exp.push({...e,id:newId()});have.add(k(e));}});
   [4,5,6].forEach(i=>{if(st.vir[i]===undefined)st.vir[i]=true;});
   if((st.seedV||1)<3){
     const t=x=>x.trim().toLowerCase(),known=new Set(st.list.map(i=>t(i.text)));
@@ -915,14 +920,25 @@ function listen(){
 }
 async function startSync(hid){
   sync.hid=hid;setSyncState('connecting');
-  try{await loadFirebase();sync.db=sync.dbi;listen();}catch(e){syncErr(e);}
+  try{await loadFirebase();sync.db=sync.dbi;listen();}catch(e){syncErr(e);return;}
+  seedRemote().catch(e=>console.warn('Import différé :',e));
+}
+// Envoie dans l'espace partagé les dépenses importées du Sheet depuis sa création (une seule fois)
+async function seedRemote(){
+  const f=sync.f,db=sync.db,h=sync.hid,fd=f.doc(db,'foyers',h);
+  const d=(await f.getDoc(fd)).data()||{},from=d.seedV||3;
+  if(from>=SEED_V)return;
+  const ids=[];for(let v=from+1;v<=SEED_V;v++)ids.push(...(SEED_NEW[v]||[]));
+  const ex=await f.getDocs(f.collection(db,'foyers',h,'exp')),have=new Set(ex.docs.map(x=>expKey(x.data())));
+  await pushAll(h,'exp',SEED.filter(e=>ids.includes(e.id)&&!have.has(expKey(e))).map(e=>({...e,id:newId()})));
+  await f.setDoc(fd,{seedV:SEED_V},{merge:true});
 }
 // Premier téléphone : crée l'espace partagé et y envoie toutes ses données
 async function createSpace(){
   const hid=genCode();setSyncState('connecting');
   try{
     await loadFirebase();const f=sync.f,db=sync.dbi;
-    await f.setDoc(f.doc(db,'foyers',hid),{vir:clean(st.vir),cree:f.serverTimestamp()});
+    await f.setDoc(f.doc(db,'foyers',hid),{vir:clean(st.vir),seedV:SEED_V,cree:f.serverTimestamp()});
     await pushAll(hid,'exp',st.exp);await pushAll(hid,'list',st.list);
     try{localStorage.setItem(SYNC_KEY,hid);}catch(e){}
     await startSync(hid);toast('Espace partagé créé');
