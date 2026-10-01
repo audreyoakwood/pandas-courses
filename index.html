@@ -255,6 +255,23 @@
   .sheet .who button:active { transform: scale(0.95); }
   .sheet .who .av { width: 56px; height: 56px; font-size: 1.4rem; }
 
+  /* Choix du magasin : grille de tuiles (4 + 3), icône au-dessus du nom */
+  .chips.stores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow: visible; margin: 0; padding: 4px 0 10px; }
+  .chips.stores .chip { flex-direction: column; justify-content: center; gap: 3px; padding: 8px 4px 7px; border-radius: 18px; font-size: 0.8rem; min-width: 0; }
+  .chips.stores .chip .e { font-size: 1.3rem; }
+
+  /* Mobile : la date et le payeur sont déjà visibles dans les sélecteurs, on masque le rappel sous le montant */
+  @media (max-width: 699px) {
+    .amount-cap { display: none; }
+    .amount { padding: 0 0 6px; }
+    .amount-val { font-size: 3.2rem; }
+    .chips.stores { gap: 6px; padding-bottom: 8px; }
+    .chips.stores .chip { padding: 6px 2px 5px; gap: 1px; font-size: 0.78rem; }
+    .chips.stores .chip .e { font-size: 1.15rem; }
+    .key { height: 46px; }
+    .keypad { margin-top: 10px; }
+  }
+
   /* ── Adaptation aux appareils ── */
   .c-left, .c-right { min-width: 0; }
   .basket .basket-head { margin-top: 6px; }
@@ -294,10 +311,13 @@
     .tabbar { bottom: calc(8px + env(safe-area-inset-bottom)); }
   }
   @media (max-height: 700px) {
+    .chips.stores .chip { padding: 4px 2px 3px; }
+    .bal { padding: 10px 12px 10px; }
+    .top { padding-top: calc(5px + env(safe-area-inset-top)); padding-bottom: 6px; }
     .bal-legend { display: none; }
     .bal-bar { margin-bottom: 0; }
     .amount-val { font-size: 2.4rem; }
-    .key { height: 40px; }
+    .key { height: 38px; }
   }
 
   /* Téléphones étroits (≤ 360 px) */
@@ -383,8 +403,8 @@
       <div class="amount-val num zero" id="amt-val">0 €</div>
       <div class="amount-cap" id="amt-cap"></div>
     </div>
-    <div class="chips" id="store-chips"></div>
-    <input class="other-in" id="other-in" type="text" placeholder="Préciser (ex. pharmacie, marché…)" oninput="rSave()">
+    <div class="chips stores" id="store-chips"></div>
+    <input class="other-in" id="other-in" type="text" placeholder="Préciser (facultatif) : pharmacie, marché…" oninput="rSave()">
     <div class="row2">
       <div class="seg payer" id="payer"></div>
       <div class="seg" id="dseg"></div>
@@ -440,8 +460,8 @@
 const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const MSHORT=['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
 const P=['Audrey','Tom'];
-const ABBR={'Bioveyre':'BV','Carrefour':'CF','Picard':'PIC','Malongo':'MAL','Leclerc':'LEC','Biocoop':'BIO','Autres':'···','Set Squash':'SS'};
-const KNOWN=['Bioveyre','Carrefour','Picard','Malongo','Leclerc','Biocoop','Autres'];
+const ABBR={'Bioveyre':'BV','Carrefour':'CF','Picard':'PIC','Malongo':'MAL','Leclerc':'LEC','Biocoop':'BIO','Delbard':'DEL','Autres':'···','Set Squash':'SS'};
+const KNOWN=['Bioveyre','Carrefour','Delbard','Leclerc','Malongo','Picard','Autres'];
 const STORE_STYLE={
   'Bioveyre':['#EEF3EF','#4F6E55'],
   'Carrefour':['#EDF1F5','#4A6785'],
@@ -449,6 +469,7 @@ const STORE_STYLE={
   'Malongo':['#F5F1E8','#7D6640'],
   'Leclerc':['#F6EEEA','#8E5A48'],
   'Biocoop':['#ECF3F2','#4C7470'],
+  'Delbard':['#EEF3EF','#4F6E55'],
   'Autres':['#F0F0EC','#6F7672'],
 };
 function tagStyle(s){return STORE_STYLE[s]||['#F0F0EC','#6F7672'];}
@@ -557,7 +578,7 @@ function eq(m){const a=pTot(m,0),t=pTot(m,1),tot=a+t;return{a,t,tot,d:a-tot/2};}
 function fs(n){return Math.round(n*100)%100===0?Math.round(n)+' €':n.toFixed(2).replace('.',',')+' €';}
 function abbr(s){if(ABBR[s])return ABBR[s];if(s.includes(','))return s.split(',').map(x=>ABBR[x.trim()]||x.trim().slice(0,2).toUpperCase()).join('/');return s.slice(0,3).toUpperCase();}
 function pc(p){return p===0?'a':'t';}
-const EMOJI={'Bioveyre':'🥬','Carrefour':'🛒','Picard':'🧊','Malongo':'☕','Leclerc':'🏬','Biocoop':'🌱','Autres':'🧾','Set Squash':'🎾','Parapharmacie':'💊'};
+const EMOJI={'Bioveyre':'🥬','Carrefour':'🛒','Picard':'🧊','Malongo':'☕','Leclerc':'🏬','Biocoop':'🌱','Delbard':'🪴','Autres':'🧾','Set Squash':'🎾','Parapharmacie':'💊'};
 function emo(s){if(EMOJI[s])return EMOJI[s];const f=String(s).split(',')[0].trim();return EMOJI[f]||'🧾';}
 function av(p){return p===null||p===undefined?'<span class="av q">?</span>':`<span class="av ${pc(p)}">${P[p][0]}</span>`;}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -583,10 +604,8 @@ function go(v){
 
 // ── Saisir ──
 const c={amt:'',store:null,other:'',payer:0,dmode:'today',date:today()};
-function storeOrder(){
-  const n={};st.exp.forEach(e=>{n[e.store]=(n[e.store]||0)+1;});
-  return KNOWN.filter(s=>s!=='Autres').sort((a,b)=>(n[b]||0)-(n[a]||0));
-}
+// Ordre fixe des magasins (« Autres » est ajouté à la fin, avec précision facultative)
+function storeOrder(){return KNOWN.filter(s=>s!=='Autres');}
 function amtNum(){return c.amt?parseFloat(c.amt.replace(',','.')):0;}
 function rBal(){
   const m=cm(),e=eq(m),o=owes(e.d);
@@ -610,7 +629,7 @@ function rCap(){
 }
 function rStores(){
   const chips=storeOrder().map(s=>`<button class="chip ${c.store===s?'on':''}" onclick="pickStore('${s}')"><span class="e">${emo(s)}</span>${s}</button>`).join('')
-    +`<button class="chip ${c.store==='__other'?'on':''}" onclick="pickStore('__other')"><span class="e">✏️</span>Autre…</button>`;
+    +`<button class="chip ${c.store==='__other'?'on':''}" onclick="pickStore('__other')"><span class="e">🧾</span>Autres</button>`;
   document.getElementById('store-chips').innerHTML=chips;
   document.getElementById('other-in').classList.toggle('on',c.store==='__other');
 }
@@ -628,7 +647,7 @@ function rKeypad(){
 }
 function rSave(){
   const b=document.getElementById('save'),n=amtNum();
-  const storeOk=c.store&&(c.store!=='__other'||document.getElementById('other-in').value.trim());
+  const storeOk=!!c.store;
   const dateOk=c.dmode!=='other'||document.getElementById('date-in').value;
   b.disabled=!(n>0&&storeOk&&dateOk);
   b.textContent=!n?'Saisir un montant':!storeOk?'Choisir un magasin':!dateOk?'Choisir une date':editId!==null?'Enregistrer les modifications':`Enregistrer ${fs(n)}`;
@@ -665,7 +684,7 @@ function submitExp(){
   const date=c.dmode==='other'?document.getElementById('date-in').value:c.date;if(!date)return;
   const otherTxt=document.getElementById('other-in').value.trim();
   let store=c.store,comment;
-  if(store==='__other'){store='Autres';comment=otherTxt;}
+  if(store==='__other'){store='Autres';comment=otherTxt||undefined;}
   if(editId!==null){
     const e=st.exp.find(x=>x.id===editId);
     // Un magasin hors liste (ex. « Carrefour, Bioveyre ») resté inchangé garde son nom d'origine
