@@ -851,7 +851,14 @@ document.addEventListener('keydown',ev=>{
 // ── Partage entre les deux téléphones (Firebase Firestore) ──
 // Configuration du projet Firebase : à remplir pour activer le partage (ces valeurs sont publiques
 // par nature ; l'accès aux données est protégé par le code secret du foyer, cf. firestore.rules).
-const FIREBASE_CONFIG=null;
+const FIREBASE_CONFIG={
+  apiKey:'AIzaSyAtUvfpJLrNkdLSB5f9hGWfOLOQQHZeZAw',
+  authDomain:'pandas-courses.firebaseapp.com',
+  projectId:'pandas-courses',
+  storageBucket:'pandas-courses.firebasestorage.app',
+  messagingSenderId:'376739617022',
+  appId:'1:376739617022:web:a1c9a5cf3b4e93119c6daf'
+};
 const SYNC_KEY='pandacourses-foyer';
 const sync={hid:null,db:null,f:null,state:'off',err:''}; // state : off | connecting | on | offline | error
 function syncCfg(){return window.__FIREBASE_CONFIG||FIREBASE_CONFIG;}
