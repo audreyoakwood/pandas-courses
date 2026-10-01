@@ -293,6 +293,7 @@
   .sh-state.on { color: var(--pos); } .sh-state.error { color: var(--neg); }
   .sh-code { padding: 12px; border-radius: 16px; background: var(--grad-soft); text-align: center; font-size: 1.15rem; font-weight: 600; letter-spacing: 0.08em; user-select: all; -webkit-user-select: all; }
   .sh-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .app-ver { margin-top: 18px; text-align: center; font-size: 0.74rem; color: var(--ink-3); }
   .sh-err { margin-top: 10px; font-size: 0.88rem; color: var(--neg); font-weight: 500; }
 
   /* ── Adaptation aux appareils ── */
@@ -478,6 +479,7 @@
     <p>Vos dépenses seront attribuées à cette personne par défaut. Vous pourrez toujours choisir l'autre au moment de la saisie.</p>
     <div class="who"><button class="a" onclick="setMe(0)"><span class="av a">A</span>Audrey</button><button class="t" onclick="setMe(1)"><span class="av t">T</span>Tom</button></div>
     <div class="share" id="share-box" hidden></div>
+    <div class="app-ver">PandaCourses · version 16</div>
   </div>
 </div>
 
@@ -1013,7 +1015,21 @@ if(me===null)openWho();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  // Une appli ouverte depuis l'icône est souvent juste « réveillée » sans être rechargée :
+  // on vérifie s'il existe une nouvelle version à chaque retour au premier plan, et on recharge si oui.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true; location.reload();
+  });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      const check = () => reg.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+      setInterval(check, 30 * 60 * 1000);
+    }).catch(() => {});
+  });
 }
 </script>
 </body>
