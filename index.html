@@ -344,24 +344,34 @@ const STORE_STYLE={
 function tagStyle(s){return STORE_STYLE[s]||['#F0F0EC','#6F7672'];}
 
 const PANDA=`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3E93B8"/><stop offset="100%" stop-color="#46A886"/></linearGradient></defs>
-  <rect x="4" y="4" width="72" height="72" rx="22" fill="url(#bg)"/>
-  <rect x="4" y="4" width="72" height="72" rx="22" fill="white" opacity="0.1"/>
-  <g transform="translate(40 37)">
-    <circle cx="-16" cy="-15" r="8" fill="#26363A"/><circle cx="16" cy="-15" r="8" fill="#26363A"/>
+  <defs>
+    <linearGradient id="pg-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6C5CFF"/><stop offset="55%" stop-color="#B154F5"/><stop offset="100%" stop-color="#FF6F91"/></linearGradient>
+    <linearGradient id="pg-cart" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6C5CFF"/><stop offset="100%" stop-color="#FF6F91"/></linearGradient>
+  </defs>
+  <rect width="80" height="80" rx="24" fill="url(#pg-bg)"/>
+  <clipPath id="pg-clip"><rect width="80" height="80" rx="24"/></clipPath>
+  <g clip-path="url(#pg-clip)">
+  <circle cx="64" cy="10" r="22" fill="#fff" opacity="0.16"/>
+  <circle cx="12" cy="74" r="18" fill="#fff" opacity="0.10"/>
+  <g transform="translate(39 38)">
+    <ellipse cx="0" cy="21.5" rx="15" ry="3" fill="#1D1838" opacity="0.18"/>
+    <circle cx="-15.5" cy="-14.5" r="7.5" fill="#1D1838"/><circle cx="15.5" cy="-14.5" r="7.5" fill="#1D1838"/>
+    <circle cx="-15.5" cy="-14.5" r="3.4" fill="#FF8FB1" opacity="0.55"/><circle cx="15.5" cy="-14.5" r="3.4" fill="#FF8FB1" opacity="0.55"/>
     <circle cx="0" cy="0" r="20" fill="#fff"/>
-    <ellipse cx="-8.5" cy="-2" rx="6" ry="7.5" fill="#26363A" transform="rotate(-12 -8.5 -2)"/>
-    <ellipse cx="8.5" cy="-2" rx="6" ry="7.5" fill="#26363A" transform="rotate(12 8.5 -2)"/>
-    <circle cx="-8" cy="-1" r="2.4" fill="#fff"/><circle cx="8" cy="-1" r="2.4" fill="#fff"/>
-    <circle cx="-7.2" cy="-1.6" r="1.1" fill="#26363A"/><circle cx="8.8" cy="-1.6" r="1.1" fill="#26363A"/>
-    <path d="M-3 9 Q0 12 3 9" fill="#26363A"/>
-    <path d="M0 11 Q0 14.5 -3.5 15.5 M0 11 Q0 14.5 3.5 15.5" fill="none" stroke="#26363A" stroke-width="1.4" stroke-linecap="round"/>
+    <ellipse cx="-8.2" cy="-1.5" rx="5.6" ry="7" fill="#1D1838" transform="rotate(-14 -8.2 -1.5)"/>
+    <ellipse cx="8.2" cy="-1.5" rx="5.6" ry="7" fill="#1D1838" transform="rotate(14 8.2 -1.5)"/>
+    <circle cx="-7.6" cy="-1" r="2.5" fill="#fff"/><circle cx="7.6" cy="-1" r="2.5" fill="#fff"/>
+    <circle cx="-7" cy="-1.5" r="1.2" fill="#1D1838"/><circle cx="8.2" cy="-1.5" r="1.2" fill="#1D1838"/>
+    <circle cx="-13" cy="7.5" r="3" fill="#FF8FB1" opacity="0.6"/><circle cx="13" cy="7.5" r="3" fill="#FF8FB1" opacity="0.6"/>
+    <ellipse cx="0" cy="7.6" rx="3" ry="2.1" fill="#1D1838"/>
+    <path d="M0 9.6 Q0 12.6 -3 13.2 M0 9.6 Q0 12.6 3 13.2" fill="none" stroke="#1D1838" stroke-width="1.4" stroke-linecap="round"/>
   </g>
-  <g transform="translate(52 54)">
-    <circle cx="6" cy="6" r="13" fill="#fff"/>
-    <path d="M-1 -1 h11 l-1.5 7 h-7 z" fill="none" stroke="#368A6D" stroke-width="1.8" stroke-linejoin="round"/>
-    <path d="M-1 -1 l-2.5 -1.5" fill="none" stroke="#368A6D" stroke-width="1.8" stroke-linecap="round"/>
-    <circle cx="2" cy="8.5" r="1.4" fill="#2F7A9B"/><circle cx="8" cy="8.5" r="1.4" fill="#2F7A9B"/>
+  <g transform="translate(53 54)">
+    <circle cx="6" cy="6" r="12.5" fill="#fff"/>
+    <path d="M-0.5 -0.5 h11.5 l-1.6 7.2 h-7.6 z" fill="url(#pg-cart)" stroke="url(#pg-cart)" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M-0.5 -0.5 l-2.6 -1.6" fill="none" stroke="#6C5CFF" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="2.4" cy="9.6" r="1.5" fill="#FF7A4D"/><circle cx="8.4" cy="9.6" r="1.5" fill="#FF7A4D"/>
+  </g>
   </g></svg>`;
 
 const SEED=[
