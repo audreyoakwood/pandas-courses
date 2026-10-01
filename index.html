@@ -161,6 +161,9 @@
   /* FAB */
   .fab { position: fixed; bottom: calc(64px + 1rem); right: calc(50% - 215px + 1rem); width: 56px; height: 56px; border-radius: 50%; background: #fff; color: var(--tom-deep); border: none; font-size: 1.7rem; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--sh-lg); transition: transform 0.15s; z-index: 10; }
   @media (max-width: 470px) { .fab { right: 1.3rem; } }
+  .quick-add { display: flex; align-items: center; justify-content: center; gap: 0.55rem; width: 100%; padding: 0.95rem; border: none; border-radius: var(--r); background: #fff; color: var(--tom-deep); font-family: inherit; font-size: 1rem; font-weight: 800; cursor: pointer; box-shadow: var(--sh-md); transition: transform 0.15s; }
+  .quick-add span { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--grad); color: #fff; font-size: 1.25rem; line-height: 1; }
+  .quick-add:active { transform: scale(0.97); }
   .fab:hover { transform: scale(1.08); } .fab:active { transform: scale(0.94); }
 
   /* Bottom nav */
@@ -226,6 +229,7 @@
   <div class="hero" id="hero"></div>
   <div class="content">
     <div class="stack">
+      <button class="quick-add" onclick="openAdd()"><span>+</span>Ajouter une dépense</button>
       <div class="card equilibre" id="equilibre"></div>
       <div class="card imp-card" id="imp-card" onclick="go('list')"></div>
       <div class="card ring-card" id="ring"></div>
@@ -261,7 +265,7 @@
   <div class="content"><div class="card year-wrap"><div class="table-wrap" id="year"></div></div></div>
 </div>
 
-<button class="fab" onclick="openAdd()" id="fab">+</button>
+<button class="fab" onclick="openAdd()" id="fab" style="display:none">+</button>
 
 <nav class="nav">
   <button class="nav-item active" data-v="home" onclick="go('home')">
@@ -502,7 +506,7 @@ function go(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.getElementById('v-'+v).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
-  document.getElementById('fab').style.display=(v==='year'||v==='list')?'none':'flex';
+  document.getElementById('fab').style.display=v==='history'?'flex':'none';
   if(v==='home')rImportant();if(v==='history')rHist();if(v==='year')rYear();if(v==='list')rList();
 }
 
