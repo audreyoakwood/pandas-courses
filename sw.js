@@ -1,5 +1,5 @@
 // PandaCourses — service worker (offline)
-const CACHE = 'pandacourses-v4';
+const CACHE = 'pandacourses-v5';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (e) => {
