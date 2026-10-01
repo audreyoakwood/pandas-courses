@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#3E93B0">
+<meta name="theme-color" content="#F6F6F3">
 <meta name="description" content="Budget courses partagé et liste de courses pour Audrey & Tom">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,28 +14,29 @@
 <title>PandaCourses — Audrey & Tom</title>
 <style>
   :root {
-    --audrey: #3E93B8;
-    --audrey-deep: #2F7A9B;
-    --audrey-faint: #E4F1F6;
-    --tom: #46A886;
-    --tom-deep: #368A6D;
-    --tom-faint: #E1F2EC;
-    --ink: #26363A;
-    --ink-2: #7C9195;
+    --audrey: #5E7FA0;
+    --audrey-deep: #4A6785;
+    --audrey-faint: #EDF1F5;
+    --tom: #7D9C83;
+    --tom-deep: #5C7B62;
+    --tom-faint: #EEF3EF;
+    --ink: #1F2523;
+    --ink-2: #6F7672;
     --card: #FFFFFF;
-    --line: #EDF1F0;
-    --field: #F4F7F6;
-    --positive: #368A6D;
-    --negative: #D07A63;
-    --sh-sm: 0 2px 8px rgba(40,70,75,0.06);
-    --sh-md: 0 8px 24px rgba(40,70,75,0.10);
-    --sh-lg: 0 14px 36px rgba(40,70,75,0.14);
-    --r-xl: 26px; --r: 20px; --r-sm: 15px; --r-xs: 11px;
-    --grad: linear-gradient(135deg, var(--audrey) 0%, var(--tom) 100%);
-    --page: linear-gradient(165deg, #3E93B0 0%, #46A79E 42%, #52B896 100%);
+    --line: #E7E7E2;
+    --field: #F4F4F1;
+    --positive: #4E7A5A;
+    --negative: #B0614C;
+    --star: #C9A24A;
+    --sh-sm: none;
+    --sh-md: none;
+    --sh-lg: 0 10px 30px rgba(0,0,0,0.10);
+    --r-xl: 22px; --r: 16px; --r-sm: 12px; --r-xs: 10px;
+    --grad: var(--ink);
+    --page: #F6F6F3;
   }
   * , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: #56B4A8; }
+  html { background: #F6F6F3; }
   body {
     font-family: 'Avenir Next', 'Nunito Sans', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
     color: var(--ink);
@@ -223,6 +224,41 @@
   .li.imp { background: #FFFBF0; box-shadow: inset 3px 0 0 #E8B44A, var(--sh-sm); }
   .li-del { background: none; border: none; color: var(--ink-2); font-size: 1rem; cursor: pointer; padding: 0.2rem 0.35rem; border-radius: 6px; opacity: 0.6; }
   .li-del:hover { opacity: 1; color: var(--negative); }
+
+  /* ── Thème sobre : fond clair, texte foncé, couleurs discrètes ── */
+  body { background: var(--page); }
+  .card, .exp, .li, .vbar { border: 1px solid var(--line); box-shadow: none; }
+  .hero { color: var(--ink); background: none; padding: 1.3rem 1.4rem 1rem; }
+  .hero-logo { filter: none; width: 36px; height: 36px; }
+  .hero-app, .hero-month, .hero-label, .hero-total, .hero-sub { text-shadow: none; }
+  .hero-app { font-size: 1rem; font-weight: 700; }
+  .hero-month { font-size: 1rem; font-weight: 600; color: var(--ink-2); margin-bottom: 0.4rem; }
+  .hero-label { font-size: 0.78rem; font-weight: 500; color: var(--ink-2); }
+  .hero-total { font-weight: 700; font-size: 2.5rem; }
+  .hero-sub { font-weight: 500; color: var(--ink-2); }
+  .eq-amount, .rc-amount, .th-val { font-weight: 700; }
+  .imp-title .st, .imp-it .st, .li-star.on { color: var(--star); }
+  .li.imp { background: #FBF9F3; box-shadow: inset 3px 0 0 var(--star); }
+  .li-check { border-color: #C9D3CC; }
+  .sec-title { color: var(--ink); text-shadow: none; font-weight: 600; }
+  .sec-action { color: var(--ink-2); opacity: 1; }
+  .empty { color: var(--ink-2); }
+  .msel button { background: var(--card); border: 1px solid var(--line); color: var(--ink); }
+  .msel span { color: var(--ink); text-shadow: none; font-weight: 600; }
+  .quick-add { background: var(--ink); color: #fff; font-weight: 600; font-size: 0.95rem; }
+  .quick-add span { background: none; width: auto; height: auto; font-size: 1.2rem; }
+  .fab { background: var(--ink); color: #fff; }
+  .btn-go, .vbtn { font-weight: 600; box-shadow: none; }
+  .vbtn.done { background: var(--field); color: var(--ink-2); }
+  .nav { box-shadow: none; border-top: 1px solid var(--line); }
+  .nav-item.active { color: var(--ink); }
+  .list-add input, .li-store-sel, .list-add button { border: 1px solid var(--line); box-shadow: none; }
+  .list-add button { color: var(--ink); }
+  .fchip { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
+  .fchip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .list-count { color: var(--ink-2); }
+  .yrow.cur { background: var(--field); }
+  .fld input:focus, .fld select:focus { border-color: var(--ink-2); }
 </style>
 
 <div id="v-home" class="view active">
@@ -261,7 +297,7 @@
 </div>
 
 <div id="v-year" class="view">
-  <div style="padding:1.4rem 1.25rem 0.3rem"><h2 style="font-size:1.2rem;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.12)">Récap 2026</h2></div>
+  <div style="padding:1.4rem 1.25rem 0.3rem"><h2 style="font-size:1.2rem;font-weight:700">Récap 2026</h2></div>
   <div class="content"><div class="card year-wrap"><div class="table-wrap" id="year"></div></div></div>
 </div>
 
@@ -304,15 +340,15 @@ const P=['Audrey','Tom'];
 const ABBR={'Bioveyre':'BV','Carrefour':'CF','Picard':'PIC','Malongo':'MAL','Leclerc':'LEC','Biocoop':'BIO','Autres':'···','Set Squash':'SS'};
 const KNOWN=['Bioveyre','Carrefour','Picard','Malongo','Leclerc','Biocoop','Autres'];
 const STORE_STYLE={
-  'Bioveyre':['#E1F2EC','#2F8266'],
-  'Carrefour':['#E1EEF6','#2F79A0'],
-  'Picard':['#E9EAF8','#5257B4'],
-  'Malongo':['#F4EBDB','#9E7736'],
-  'Leclerc':['#FBE6DD','#C25E3F'],
-  'Biocoop':['#DCF0EE','#2A8A83'],
-  'Autres':['#ECEFEE','#6B7A78'],
+  'Bioveyre':['#EEF3EF','#4F6E55'],
+  'Carrefour':['#EDF1F5','#4A6785'],
+  'Picard':['#F0EFF5','#5F5A80'],
+  'Malongo':['#F5F1E8','#7D6640'],
+  'Leclerc':['#F6EEEA','#8E5A48'],
+  'Biocoop':['#ECF3F2','#4C7470'],
+  'Autres':['#F0F0EC','#6F7672'],
 };
-function tagStyle(s){return STORE_STYLE[s]||['#ECEFEE','#6B7A78'];}
+function tagStyle(s){return STORE_STYLE[s]||['#F0F0EC','#6F7672'];}
 
 const PANDA=`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
   <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3E93B8"/><stop offset="100%" stop-color="#46A886"/></linearGradient></defs>
@@ -451,11 +487,11 @@ function rTrend(){
     <div class="trend-head"><div><div class="th-cap">Évolution 2026</div><div class="th-val">${fs(yr)}</div></div>
       <div style="text-align:right"><div class="th-cap">Ce mois</div><div class="th-val">${fs(vals[m])}</div></div></div>
     <svg class="trend-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" height="${H}">
-      <defs><linearGradient id="wf" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3E93B8" stop-opacity="0.4"/><stop offset="100%" stop-color="#46A886" stop-opacity="0.03"/></linearGradient>
-      <linearGradient id="wl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#3E93B8"/><stop offset="100%" stop-color="#46A886"/></linearGradient></defs>
+      <defs><linearGradient id="wf" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5E7FA0" stop-opacity="0.16"/><stop offset="100%" stop-color="#5E7FA0" stop-opacity="0"/></linearGradient>
+      <linearGradient id="wl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4A6785"/><stop offset="100%" stop-color="#4A6785"/></linearGradient></defs>
       <path d="${area}" fill="url(#wf)"/>
       <path d="${line}" fill="none" stroke="url(#wl)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${pts[pts.length-1].x}" cy="${pts[pts.length-1].y}" r="4.5" fill="#fff" stroke="#46A886" stroke-width="2.5"/>
+      <circle cx="${pts[pts.length-1].x}" cy="${pts[pts.length-1].y}" r="4.5" fill="#fff" stroke="#4A6785" stroke-width="2.5"/>
     </svg>
     <div class="trend-labels">${li.map(i=>`<span>${MSHORT[i]}</span>`).join('')}</div>`;
 }
@@ -523,7 +559,7 @@ function rFilters(stores,hasNone){
   }).join('');
   if(hasNone){
     const on=listFilter==='__none__';
-    const style=on?`background:#6B7A78;color:#fff`:`background:#ECEFEE;color:#6B7A78`;
+    const style=on?`background:var(--ink);color:#fff`:`background:#F0F0EC;color:#6F7672`;
     chips+=`<button class="fchip" style="${style}" onclick="setFilter('__none__')">--</button>`;
   }
   el.innerHTML=chips;
