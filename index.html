@@ -552,8 +552,15 @@ const SEED=[
 ];
 
 // Version des données importées depuis le Google Sheet : à incrémenter à chaque nouvel import
-const SEED_V=2;
-let st={exp:[...SEED],vir:{0:true,1:true,2:true,3:true,4:true,5:true,6:true},nextId:87,seedV:SEED_V,sel:0,vm:6,list:[],listId:1};
+const SEED_V=3;
+// Liste de courses importée (Google Keep, 1er octobre 2026)
+const LIST_SEED=[
+  ['Tube 17*66',''],['Id Scratch',''],['Litière lapin',''],['Lait',''],['Pain tranche',''],
+  ['Sachet congélation petit (1l)',''],['Aluminium',''],['Compotes pot',''],['Petite confiture',''],
+  ['Pâtes 3 couleurs',''],['Graines couscous',''],['Compté',''],['Légumes et fruits',''],
+  ['Guiness zéro','Leclerc'],['Ipa zéro','Leclerc'],
+];
+let st={exp:[...SEED],vir:{0:true,1:true,2:true,3:true,4:true,5:true,6:true},nextId:87,seedV:1,sel:0,vm:6,list:[],listId:1};
 let editId=null;
 
 function save(){localStorage.setItem('pandacourses',JSON.stringify(st));}
@@ -564,6 +571,10 @@ function mergeSeed(){
   const k=e=>e.date+'|'+e.store+'|'+e.amount+'|'+e.partner,have=new Set(st.exp.map(k));
   SEED.forEach(e=>{if(!have.has(k(e))){st.exp.push({...e,id:st.nextId++});have.add(k(e));}});
   [4,5,6].forEach(i=>{if(st.vir[i]===undefined)st.vir[i]=true;});
+  if((st.seedV||1)<3){
+    const t=x=>x.trim().toLowerCase(),known=new Set(st.list.map(i=>t(i.text)));
+    LIST_SEED.forEach(([text,store])=>{if(!known.has(t(text))){st.list.push({id:st.listId++,text,done:false,store});known.add(t(text));}});
+  }
   st.seedV=SEED_V;save();
 }
 
