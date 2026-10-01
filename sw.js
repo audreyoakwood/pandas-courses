@@ -1,5 +1,5 @@
 // PandaCourses — service worker (offline)
-const CACHE = 'pandacourses-v12';
+const CACHE = 'pandacourses-v13';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './fonts/outfit-latin.woff2'];
 
 self.addEventListener('install', (e) => {
@@ -18,6 +18,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  // Seuls les fichiers de l'appli sont mis en cache : les échanges avec Firebase passent toujours par le réseau
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then((cached) =>
       cached ||

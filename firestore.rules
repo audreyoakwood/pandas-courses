@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Un « foyer » n'est accessible qu'à qui connaît son code secret (16 caractères aléatoires).
+    // Personne ne peut lister les foyers existants ni en supprimer un.
+    match /foyers/{foyer} {
+      allow get, create, update: if foyer.size() == 16;
+      allow list, delete: if false;
+      match /{col}/{id} {
+        allow read, write: if foyer.size() == 16 && col in ['exp', 'list'];
+      }
+    }
+  }
+}

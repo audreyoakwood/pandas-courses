@@ -29,6 +29,20 @@ python3 -m http.server 8080
 
 Un service worker nécessite `http(s)` (ou `localhost`) pour s'activer.
 
+## Partage entre les deux téléphones (Firebase)
+
+La liste, les dépenses et les virements peuvent être partagés en temps réel via
+Firebase Firestore. Pour l'activer :
+
+1. Renseigner `FIREBASE_CONFIG` dans `index.html` (configuration de l'appli Web Firebase).
+2. Publier les règles de `firestore.rules` dans la console Firebase (Firestore → Règles).
+3. Sur un téléphone : bouton de profil en haut à droite → « Créer un espace partagé »,
+   puis « Envoyer le lien à l'autre téléphone ».
+
+Les données d'un foyer sont rangées sous `foyers/{code}` ; le code (16 caractères
+aléatoires) sert de clé d'accès. Le SDK Firebase est intégré dans `vendor/firebase.js`
+(bundle esbuild de `firebase@12`) pour fonctionner aussi hors-ligne.
+
 ## Structure
 
 | Fichier | Rôle |

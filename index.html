@@ -247,6 +247,8 @@
   .sheet-bg { position: fixed; inset: 0; background: rgba(20,14,50,0.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: flex-end; justify-content: center; z-index: 30; }
   .sheet-bg.on { display: flex; }
   .sheet { width: 100%; max-width: 430px; background: var(--bg); border-radius: 32px 32px 0 0; padding: 28px 20px calc(28px + env(safe-area-inset-bottom)); animation: rise 0.5s var(--spring); }
+  .sheet { position: relative; }
+  .sheet-x { position: absolute; top: 18px; right: 18px; width: 36px; height: 36px; border-radius: 50%; background: var(--field); color: var(--ink-2); font-size: 0.95rem; }
   .sheet .em { font-size: 2.4rem; }
   .sheet h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.03em; margin-top: 6px; }
   .sheet p { font-size: 0.98rem; color: var(--ink-2); margin: 6px 0 20px; line-height: 1.5; }
@@ -271,6 +273,27 @@
     .key { height: 46px; }
     .keypad { margin-top: 10px; }
   }
+
+  /* Partage */
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; margin-left: -2px; background: var(--ink-3); }
+  .sync-dot.on { background: var(--pos); } .sync-dot.offline { background: var(--star); } .sync-dot.error { background: var(--neg); }
+  .sync-dot.connecting { animation: blink 1s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+  .share { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .share h3 { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.02em; }
+  .share p { margin: 6px 0 14px; font-size: 0.92rem; }
+  .sh-main { width: 100%; padding: 14px; border-radius: 18px; background: var(--grad); color: #fff; font-size: 1rem; font-weight: 600; box-shadow: var(--glow); }
+  .sh-main:disabled { opacity: 0.6; }
+  .sh-sec { padding: 12px 16px; border-radius: 16px; background: var(--field); font-size: 0.95rem; font-weight: 600; white-space: nowrap; }
+  .sh-or { margin: 14px 0 8px; font-size: 0.86rem; color: var(--ink-2); text-align: center; }
+  .sh-join { display: flex; gap: 8px; }
+  .sh-join input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--glass); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; outline: none; }
+  .sh-join input:focus { box-shadow: 0 0 0 2px var(--audrey); }
+  .sh-state { margin: 6px 0 10px; font-size: 0.9rem; font-weight: 500; color: var(--ink-2); }
+  .sh-state.on { color: var(--pos); } .sh-state.error { color: var(--neg); }
+  .sh-code { padding: 12px; border-radius: 16px; background: var(--grad-soft); text-align: center; font-size: 1.15rem; font-weight: 600; letter-spacing: 0.08em; user-select: all; -webkit-user-select: all; }
+  .sh-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .sh-err { margin-top: 10px; font-size: 0.88rem; color: var(--neg); font-weight: 500; }
 
   /* ── Adaptation aux appareils ── */
   .c-left, .c-right { min-width: 0; }
@@ -447,12 +470,14 @@
 
 <div class="toast" id="toast"><span id="toast-msg"></span><button id="toast-undo">Annuler</button></div>
 
-<div class="sheet-bg" id="who-sheet">
+<div class="sheet-bg" id="who-sheet" onclick="closeWho(event)">
   <div class="sheet">
+    <button class="sheet-x" id="sheet-x" onclick="document.getElementById('who-sheet').classList.remove('on')" aria-label="Fermer" hidden>✕</button>
     <div class="em">🐼</div>
     <h2>Qui utilise ce téléphone ?</h2>
     <p>Vos dépenses seront attribuées à cette personne par défaut. Vous pourrez toujours choisir l'autre au moment de la saisie.</p>
     <div class="who"><button class="a" onclick="setMe(0)"><span class="av a">A</span>Audrey</button><button class="t" onclick="setMe(1)"><span class="av t">T</span>Tom</button></div>
+    <div class="share" id="share-box" hidden></div>
   </div>
 </div>
 
@@ -600,7 +625,8 @@ function owes(d){if(Math.abs(d)<0.01)return null;return d>0?{from:'Tom',to:'Audr
 // ── Qui utilise ce téléphone (propre à chaque appareil) ──
 let me=null;
 try{const v=localStorage.getItem('pandacourses-me');if(v==='0'||v==='1')me=+v;}catch(e){}
-function openWho(){document.getElementById('who-sheet').classList.add('on');}
+function openWho(){rShare();document.getElementById('sheet-x').hidden=me===null;document.getElementById('who-sheet').classList.add('on');}
+function closeWho(ev){if(ev.target===ev.currentTarget&&me!==null)ev.currentTarget.classList.remove('on');}
 function setMe(p){me=p;try{localStorage.setItem('pandacourses-me',String(p));}catch(e){}document.getElementById('who-sheet').classList.remove('on');if(editId===null)c.payer=p;rSaisir();}
 
 // ── Navigation ──
@@ -664,7 +690,7 @@ function rSave(){
   b.textContent=!n?'Saisir un montant':!storeOk?'Choisir un magasin':!dateOk?'Choisir une date':editId!==null?'Enregistrer les modifications':`Enregistrer ${fs(n)}`;
 }
 function rSaisir(){
-  document.getElementById('me-btn').innerHTML=me===null?`${av(null)}Qui êtes-vous ?`:`${av(me)}${P[me]}`;
+  rMe();
   rBal();rAmt();rStores();rPayer();rDate();rCap();
 }
 function press(k){
@@ -700,14 +726,14 @@ function submitExp(){
     const e=st.exp.find(x=>x.id===editId);
     // Un magasin hors liste (ex. « Carrefour, Bioveyre ») resté inchangé garde son nom d'origine
     if(e&&c.store==='__other'&&!KNOWN.includes(e.store)&&otherTxt===e.store){store=e.store;comment=e.comment;}
-    if(e){e.store=store;e.amount=n;e.date=date;e.partner=c.payer;if(comment)e.comment=comment;else delete e.comment;}
-    save();resetComposer();rSaisir();toast('Dépense modifiée');go('journal');return;
+    if(e){e.store=store;e.amount=n;e.date=date;e.partner=c.payer;if(comment)e.comment=comment;else delete e.comment;expPut(e);}
+   resetComposer();rSaisir();toast('Dépense modifiée');go('journal');return;
   }
-  const e={id:st.nextId++,store,amount:n,date,partner:c.payer};if(comment)e.comment=comment;
-  st.exp.push(e);save();
+  const e={id:newId(),store,amount:n,date,partner:c.payer};if(comment)e.comment=comment;
+  expPut(e);
   const label=comment||store;
   resetComposer();rSaisir();
-  toast(`${fs(n)} · ${label} ajouté`,()=>{st.exp=st.exp.filter(x=>x.id!==e.id);save();rSaisir();});
+  toast(`${fs(n)} · ${label} ajouté`,()=>{expDel(e.id);rSaisir();});
 }
 
 // Modifier : seules les dépenses du mois en cours sont modifiables
@@ -728,8 +754,8 @@ function cancelEdit(){resetComposer();rSaisir();go('journal');}
 function delEditing(){
   if(editId===null)return;
   const e=st.exp.find(x=>x.id===editId);
-  st.exp=st.exp.filter(x=>x.id!==editId);save();resetComposer();rSaisir();
-  toast('Dépense supprimée',()=>{st.exp.push(e);save();rJournal();});
+  expDel(editId);resetComposer();rSaisir();
+  toast('Dépense supprimée',()=>{expPut(e);rJournal();});
   go('journal');
 }
 
@@ -764,7 +790,7 @@ function rJournal(){
   document.getElementById('months').innerHTML=h;
 }
 function tglM(i){openM.has(i)?openM.delete(i):openM.add(i);document.getElementById('m-'+i).classList.toggle('open');}
-function tglV(i){st.vir[i]=!st.vir[i];save();rJournal();}
+function tglV(i){virSet(i,!st.vir[i]);rJournal();}
 function jump(i){openM.add(i);rJournal();const el=document.getElementById('m-'+i);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
 
 // ── Liste (groupée par magasin) ──
@@ -792,13 +818,13 @@ function rList(){
 function rBadge(){const n=st.list.filter(i=>!i.done).length,b=document.getElementById('badge');b.hidden=!n;b.textContent=n;}
 function addItem(){
   const inp=document.getElementById('li-input'),t=inp.value.trim();if(!t)return;
-  st.list.push({id:st.listId++,text:t,done:false,store:liStore});
-  inp.value='';save();rList();inp.focus();
+  itemPut({id:newId(),text:t,done:false,store:liStore});
+  inp.value='';rList();inp.focus();
 }
-function tglItem(id){const i=st.list.find(x=>x.id===id);if(i){i.done=!i.done;save();rList();}}
-function tglImp(id){const i=st.list.find(x=>x.id===id);if(i){i.important=!i.important;save();rList();}}
-function delItem(id){st.list=st.list.filter(x=>x.id!==id);save();rList();}
-function clearDone(){const kept=st.list.filter(i=>i.done);st.list=st.list.filter(i=>!i.done);save();rList();toast(`${kept.length} article${kept.length>1?'s':''} retiré${kept.length>1?'s':''}`,()=>{st.list.push(...kept);save();rList();});}
+function tglItem(id){const i=st.list.find(x=>x.id===id);if(i){i.done=!i.done;itemPut(i);rList();}}
+function tglImp(id){const i=st.list.find(x=>x.id===id);if(i){i.important=!i.important;itemPut(i);rList();}}
+function delItem(id){itemDel(id);rList();}
+function clearDone(){const kept=st.list.filter(i=>i.done);kept.forEach(i=>itemDel(i.id));rList();toast(`${kept.length} article${kept.length>1?'s':''} retiré${kept.length>1?'s':''}`,()=>{kept.forEach(itemPut);rList();});}
 
 // ── Toast avec « Annuler » ──
 let toastT=null;
@@ -822,10 +848,144 @@ document.addEventListener('keydown',ev=>{
   ev.preventDefault();
 });
 
+// ── Partage entre les deux téléphones (Firebase Firestore) ──
+// Configuration du projet Firebase : à remplir pour activer le partage (ces valeurs sont publiques
+// par nature ; l'accès aux données est protégé par le code secret du foyer, cf. firestore.rules).
+const FIREBASE_CONFIG=null;
+const SYNC_KEY='pandacourses-foyer';
+const sync={hid:null,db:null,f:null,state:'off',err:''}; // state : off | connecting | on | offline | error
+function syncCfg(){return window.__FIREBASE_CONFIG||FIREBASE_CONFIG;}
+function newId(){return Date.now()*1000+Math.floor(Math.random()*1000);}
+function clean(o){return JSON.parse(JSON.stringify(o));}
+function expKey(e){return [e.date,e.store,e.amount,e.partner,e.comment||''].join('|');}
+function itemKey(i){return String(i.text).trim().toLowerCase();}
+function fmtCode(h){return h.match(/.{1,4}/g).join('-');}
+function normCode(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
+function genCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(16);crypto.getRandomValues(r);return [...r].map(x=>A[x%32]).join('');}
+function shareUrl(){return location.origin+location.pathname+'#rejoindre='+sync.hid;}
+function syncErr(e){console.error(e);sync.err=String(e&&e.message||e);setSyncState('error');}
+function setSyncState(s){sync.state=s;rMe();rShare();}
+
+// Écritures : appliquées tout de suite sur ce téléphone, puis envoyées à l'autre si le partage est actif
+function ref(...p){return sync.f.doc(sync.db,'foyers',sync.hid,...p);}
+function expPut(e){const k=st.exp.findIndex(x=>x.id===e.id);if(k>=0)st.exp[k]=e;else st.exp.push(e);save();if(sync.db)sync.f.setDoc(ref('exp',String(e.id)),clean(e)).catch(syncErr);}
+function expDel(id){st.exp=st.exp.filter(x=>x.id!==id);save();if(sync.db)sync.f.deleteDoc(ref('exp',String(id))).catch(syncErr);}
+function itemPut(i){const k=st.list.findIndex(x=>x.id===i.id);if(k>=0)st.list[k]=i;else st.list.push(i);save();if(sync.db)sync.f.setDoc(ref('list',String(i.id)),clean(i)).catch(syncErr);}
+function itemDel(id){st.list=st.list.filter(x=>x.id!==id);save();if(sync.db)sync.f.deleteDoc(ref('list',String(id))).catch(syncErr);}
+function virSet(m,v){st.vir[m]=v;save();if(sync.db)sync.f.setDoc(sync.f.doc(sync.db,'foyers',sync.hid),{vir:{[m]:v}},{merge:true}).catch(syncErr);}
+
+async function loadFirebase(){
+  if(sync.f)return;
+  const f=await import('./vendor/firebase.js');
+  const app=f.initializeApp(syncCfg());
+  let db;
+  try{db=f.initializeFirestore(app,{ignoreUndefinedProperties:true,localCache:f.persistentLocalCache({tabManager:f.persistentMultipleTabManager()})});}
+  catch(e){db=f.initializeFirestore(app,{ignoreUndefinedProperties:true});}
+  if(window.__FIRESTORE_EMULATOR)f.connectFirestoreEmulator(db,...window.__FIRESTORE_EMULATOR); // tests uniquement
+  sync.f=f;sync.dbi=db;
+}
+// Envoie des documents par paquets (limite Firestore : 500 écritures par lot)
+async function pushAll(hid,col,items){
+  const f=sync.f,db=sync.dbi;
+  for(let i=0;i<items.length;i+=400){
+    const b=f.writeBatch(db);
+    items.slice(i,i+400).forEach(x=>b.set(f.doc(db,'foyers',hid,col,String(x.id)),clean(x)));
+    await b.commit();
+  }
+}
+// Écoute en temps réel : chaque changement fait sur l'autre téléphone arrive ici
+function listen(){
+  const f=sync.f,db=sync.db,h=sync.hid;
+  f.onSnapshot(f.collection(db,'foyers',h,'exp'),{includeMetadataChanges:true},snap=>{
+    if(snap.metadata.fromCache&&snap.empty&&st.exp.length)return; // cache vide hors-ligne : on garde les données locales
+    st.exp=snap.docs.map(d=>d.data());save();setSyncState(snap.metadata.fromCache?'offline':'on');refresh();
+  },syncErr);
+  f.onSnapshot(f.collection(db,'foyers',h,'list'),snap=>{
+    if(snap.metadata.fromCache&&snap.empty&&st.list.length)return;
+    st.list=snap.docs.map(d=>d.data());save();refresh();
+  },syncErr);
+  f.onSnapshot(f.doc(db,'foyers',h),snap=>{const d=snap.data();if(d&&d.vir){st.vir=Object.assign({},d.vir);save();refresh();}},syncErr);
+}
+async function startSync(hid){
+  sync.hid=hid;setSyncState('connecting');
+  try{await loadFirebase();sync.db=sync.dbi;listen();}catch(e){syncErr(e);}
+}
+// Premier téléphone : crée l'espace partagé et y envoie toutes ses données
+async function createSpace(){
+  const hid=genCode();setSyncState('connecting');
+  try{
+    await loadFirebase();const f=sync.f,db=sync.dbi;
+    await f.setDoc(f.doc(db,'foyers',hid),{vir:clean(st.vir),cree:f.serverTimestamp()});
+    await pushAll(hid,'exp',st.exp);await pushAll(hid,'list',st.list);
+    try{localStorage.setItem(SYNC_KEY,hid);}catch(e){}
+    await startSync(hid);toast('Espace partagé créé');
+  }catch(e){sync.hid=null;syncErr(e);}
+}
+// Second téléphone : rejoint l'espace et y ajoute seulement ce qui n'y est pas déjà
+async function joinSpace(code){
+  const hid=normCode(code);
+  if(hid.length!==16){sync.err='Le code doit contenir 16 caractères.';setSyncState('error');return;}
+  setSyncState('connecting');
+  try{
+    await loadFirebase();const f=sync.f,db=sync.dbi;
+    const h=await f.getDoc(f.doc(db,'foyers',hid));
+    if(!h.exists()){sync.err='Code inconnu. Vérifiez-le sur l\'autre téléphone.';setSyncState('error');return;}
+    const [ex,li]=await Promise.all([f.getDocs(f.collection(db,'foyers',hid,'exp')),f.getDocs(f.collection(db,'foyers',hid,'list'))]);
+    const haveE=new Set(ex.docs.map(d=>expKey(d.data()))),haveL=new Set(li.docs.map(d=>itemKey(d.data())));
+    // Nouveaux identifiants pour éviter toute collision avec ceux de l'autre téléphone
+    await pushAll(hid,'exp',st.exp.filter(e=>!haveE.has(expKey(e))).map(e=>({...e,id:newId()})));
+    await pushAll(hid,'list',st.list.filter(i=>!haveL.has(itemKey(i))).map(i=>({...i,id:newId()})));
+    try{localStorage.setItem(SYNC_KEY,hid);}catch(e){}
+    await startSync(hid);document.getElementById('who-sheet').classList.remove('on');toast('Téléphones reliés');
+  }catch(e){syncErr(e);}
+}
+function leaveSpace(){
+  if(!confirm('Ne plus partager sur ce téléphone ? Les données restent sur l\'autre téléphone.'))return;
+  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
+  location.hash='';location.reload();
+}
+async function sendLink(){
+  const url=shareUrl();
+  try{if(navigator.share){await navigator.share({title:'PandaCourses',text:'Rejoins notre espace courses partagé 🐼',url});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  try{await navigator.clipboard.writeText(url);toast('Lien copié');}catch(e){prompt('Copiez ce lien :',url);}
+}
+function refresh(){rBadge();if(view==='saisir')rBal();else if(view==='journal')rJournal();else if(view==='liste')rList();}
+function rMe(){
+  const b=document.getElementById('me-btn');if(!b)return;
+  const dot=sync.hid?`<span class="sync-dot ${sync.state}" title="${{on:'Synchronisé',offline:'Hors-ligne',connecting:'Connexion…',error:'Erreur de synchronisation'}[sync.state]||''}"></span>`:'';
+  b.innerHTML=(me===null?`${av(null)}Qui êtes-vous ?`:`${av(me)}${P[me]}`)+dot;
+}
+function rShare(){
+  const el=document.getElementById('share-box');if(!el)return;
+  if(!syncCfg()){el.hidden=true;return;}
+  el.hidden=false;
+  const err=sync.state==='error'&&sync.err?`<div class="sh-err">${esc(sync.err)}</div>`:'';
+  if(sync.hid){
+    const lab={on:'✓ Synchronisé avec l\'autre téléphone',offline:'Hors-ligne : les changements partiront au retour du réseau',connecting:'Connexion…',error:'Problème de synchronisation'}[sync.state]||'';
+    el.innerHTML=`<h3>🔗 Partage</h3><div class="sh-state ${sync.state}">${lab}</div>
+      <div class="sh-code num">${fmtCode(sync.hid)}</div>
+      <div class="sh-acts"><button class="sh-main" onclick="sendLink()">Envoyer le lien à l'autre téléphone</button><button class="sh-sec" onclick="leaveSpace()">Ne plus partager</button></div>${err}`;
+  }else{
+    const busy=sync.state==='connecting';
+    el.innerHTML=`<h3>🔗 Partager avec l'autre téléphone</h3>
+      <p>La liste, les dépenses et les virements seront les mêmes sur vos deux téléphones, en temps réel.</p>
+      <button class="sh-main" onclick="createSpace()" ${busy?'disabled':''}>${busy?'Connexion…':'Créer un espace partagé'}</button>
+      <div class="sh-or">ou, si l'autre téléphone l'a déjà créé :</div>
+      <div class="sh-join"><input id="join-in" placeholder="Code (ex. ABCD-EFGH-…)" autocapitalize="characters" value="${esc(pendingJoin||'')}"><button class="sh-sec" onclick="joinSpace(document.getElementById('join-in').value)" ${busy?'disabled':''}>Rejoindre</button></div>${err}`;
+  }
+}
+let pendingJoin='';
+
 // ── Démarrage ──
 load();
 document.getElementById('logo').innerHTML=PANDA;
 c.payer=me??0;rKeypad();rSaisir();rBadge();
+{
+  const m=location.hash.match(/rejoindre=([A-Za-z0-9-]+)/);
+  let saved=null;try{saved=localStorage.getItem(SYNC_KEY);}catch(e){}
+  if(syncCfg()&&saved)startSync(saved);
+  else if(syncCfg()&&m){pendingJoin=fmtCode(normCode(m[1]));history.replaceState(null,'',location.pathname);openWho();}
+}
 if(me===null)openWho();
 </script>
 <script>
