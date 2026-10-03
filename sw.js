@@ -1,5 +1,5 @@
 // PandaCourses — service worker (hors-ligne + mises à jour)
-const CACHE = 'pandacourses-v16';
+const CACHE = 'pandacourses-v17';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './fonts/outfit-latin.woff2'];
 
 self.addEventListener('install', (e) => {

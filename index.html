@@ -44,7 +44,7 @@
     --tabbar: 68px;
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
     --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --seg-on: #FFFFFF; --key-press: rgba(255,255,255,0.95);
+    --solid: #FFFFFF; --seg-on: #FFFFFF; --key-press: rgba(255,255,255,0.95);
     --b1: #C7B9FF; --b2: #FFC2A8; --b3: #A9EEDC; --b4: #B4D4FF;
   }
   @media (prefers-color-scheme: dark) {
@@ -54,7 +54,7 @@
       --line: rgba(255,255,255,0.08); --field: rgba(255,255,255,0.07);
       --audrey: #8F83FF; --audrey-soft: #2A2560; --tom: #FF9670; --tom-soft: #47271D;
       --sh: 0 2px 12px rgba(0,0,0,0.25); --sh-lg: 0 14px 44px rgba(0,0,0,0.5);
-      --seg-on: rgba(255,255,255,0.16); --key-press: rgba(255,255,255,0.14);
+      --solid: #221C42; --seg-on: rgba(255,255,255,0.16); --key-press: rgba(255,255,255,0.14);
       --b1: #4B33B8; --b2: #8A3A4E; --b3: #13665A; --b4: #2A4A9A;
     }
   }
@@ -225,6 +225,14 @@
   .it-star { font-size: 1.2rem; color: var(--ink-3); opacity: 0.4; padding: 8px 6px; transition: transform 0.4s var(--spring), color 0.2s, opacity 0.2s; }
   .it-star.on { color: var(--star); opacity: 1; transform: scale(1.15); }
   .it-del { font-size: 0.9rem; color: var(--ink-3); padding: 8px; }
+  .it-grip { flex-shrink: 0; width: 24px; margin: 0 -6px 0 -8px; align-self: stretch; display: flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 1.15rem; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .it-placeholder { opacity: 0.3; }
+  .it-float { position: fixed; z-index: 60; pointer-events: none; margin: 0; border-radius: 18px; background: var(--solid); box-shadow: var(--sh-lg); transform: scale(1.03) rotate(-0.6deg); }
+  body.dragging, body.dragging * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+  .it-edit-in { width: 100%; margin-top: 14px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--glass); font-size: 1.05rem; outline: none; }
+  .it-edit-in:focus { box-shadow: 0 0 0 2px var(--audrey); }
+  .it-edit-lab { margin: 16px 2px 6px; font-weight: 500; }
+  .it-del-btn { color: var(--neg); }
   .basket-head { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding: 0 4px 8px; }
   .basket-head .g-name { color: var(--ink-2); }
   .basket-head button { font-size: 0.82rem; font-weight: 600; color: var(--neg); padding: 7px 12px; border-radius: 12px; background: var(--neg-soft); }
@@ -469,6 +477,17 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>Liste<span class="badge" id="badge" hidden></span></button>
 </nav>
 
+<div class="sheet-bg" id="item-sheet" onclick="closeItemOutside(event)">
+  <div class="sheet">
+    <button class="sheet-x" onclick="closeItemSheet()" aria-label="Fermer">✕</button>
+    <h2>Modifier l'article</h2>
+    <input class="it-edit-in" id="it-text" type="text" enterkeyhint="done" onkeydown="if(event.key==='Enter')saveItem()">
+    <div class="sub it-edit-lab">Magasin</div>
+    <div class="chips add-stores" id="it-stores"></div>
+    <div class="sh-acts"><button class="sh-main" onclick="saveItem()">Enregistrer</button><button class="sh-sec it-del-btn" onclick="delEditItem()">Supprimer l'article</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"><span id="toast-msg"></span><button id="toast-undo">Annuler</button></div>
 
 <div class="sheet-bg" id="who-sheet" onclick="closeWho(event)">
@@ -479,7 +498,7 @@
     <p>Vos dépenses seront attribuées à cette personne par défaut. Vous pourrez toujours choisir l'autre au moment de la saisie.</p>
     <div class="who"><button class="a" onclick="setMe(0)"><span class="av a">A</span>Audrey</button><button class="t" onclick="setMe(1)"><span class="av t">T</span>Tom</button></div>
     <div class="share" id="share-box" hidden></div>
-    <div class="app-ver">PandaCourses · version 16</div>
+    <div class="app-ver">PandaCourses · version 17</div>
   </div>
 </div>
 
@@ -809,23 +828,107 @@ function rList(){
   document.getElementById('li-sub').textContent=st.list.length?`${active.length} à prendre`:'';
   const g={};active.forEach(i=>{(g[i.store||'']=g[i.store||'']||[]).push(i);});
   const order=[...KNOWN.filter(s=>g[s]),...Object.keys(g).filter(s=>s&&!KNOWN.includes(s)).sort(),...(g['']?['']:[])];
-  const row=i=>`<div class="it ${i.done?'done':''}">
+  const row=i=>`<div class="it ${i.done?'done':''}" data-id="${i.id}">
+    ${i.done?'':`<span class="it-grip" onpointerdown="dragStart(event,${i.id})" aria-label="Déplacer" title="Glisser pour déplacer">⠿</span>`}
     <button class="it-check" onclick="tglItem(${i.id})" aria-label="Cocher">${i.done?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>':''}</button>
-    <button class="it-text" onclick="tglItem(${i.id})">${esc(i.text)}</button>
+    <button class="it-text" onclick="editItem(${i.id})">${esc(i.text)}</button>
     ${i.done?'':`<button class="it-star ${i.important?'on':''}" onclick="tglImp(${i.id})" aria-label="Important">★</button>`}
     <button class="it-del" onclick="delItem(${i.id})" aria-label="Supprimer">✕</button></div>`;
-  let h=order.map(s=>{const its=g[s].sort((a,b)=>(b.important?1:0)-(a.important?1:0));
-    return `<div class="group"><div class="g-head"><span class="g-name"><span class="e">${s?emo(s):'📝'}</span>${esc(s||'Sans magasin')}</span><span class="g-count">${its.length}</span></div><div class="g-body">${its.map(row).join('')}</div></div>`;}).join('');
+  let h=order.map(s=>{const its=g[s].sort((a,b)=>ord(a)-ord(b));
+    return `<div class="group"><div class="g-head"><span class="g-name"><span class="e">${s?emo(s):'📝'}</span>${esc(s||'Sans magasin')}</span><span class="g-count">${its.length}</span></div><div class="g-body" data-store="${esc(s)}">${its.map(row).join('')}</div></div>`;}).join('');
   if(done.length)h+=`<div class="group basket"><div class="basket-head"><span class="g-name"><span class="e">🧺</span>Dans le panier · ${done.length}</span><button onclick="clearDone()">Tout retirer</button></div><div class="g-body">${done.map(row).join('')}</div></div>`;
   if(!st.list.length)h='<div class="empty"><span class="big">🐼</span>La liste est vide.<br>Ajoutez ce qui manque à la maison,<br>et rangez-le par magasin.</div>';
   else if(!active.length)h='<div class="empty"><span class="big">🎉</span>Tout est pris !</div>'+h;
   document.getElementById('li-groups').innerHTML=h;
   rBadge();
 }
+// Ordre d'affichage : ordre choisi à la main, sinon ordre d'ajout
+function ord(i){return i.order??(i.id>1e13?i.id/1000:i.id);}
+
+// ── Modifier un article ──
+let editItemId=null,editStore='';
+function editItem(id){
+  const i=st.list.find(x=>x.id===id);if(!i)return;
+  editItemId=id;editStore=i.store||'';
+  document.getElementById('it-text').value=i.text;rItemStores();
+  document.getElementById('item-sheet').classList.add('on');
+  setTimeout(()=>{const t=document.getElementById('it-text');t.focus();t.setSelectionRange(t.value.length,t.value.length);},60);
+}
+function rItemStores(){
+  const opts=['',...KNOWN.filter(s=>s!=='Autres')];if(editStore&&!opts.includes(editStore))opts.push(editStore);
+  document.getElementById('it-stores').innerHTML=opts.map(s=>`<button class="chip ${editStore===s?'on':''}" onclick="editStore='${s.replace(/'/g,"\\'")}';rItemStores()">${s?`<span class="e">${emo(s)}</span>${esc(s)}`:'<span class="e">📝</span>Sans magasin'}</button>`).join('');
+}
+function closeItemSheet(){document.getElementById('item-sheet').classList.remove('on');editItemId=null;}
+function closeItemOutside(ev){if(ev.target===ev.currentTarget)closeItemSheet();}
+function saveItem(){
+  const i=st.list.find(x=>x.id===editItemId),t=document.getElementById('it-text').value.trim();
+  if(!i||!t)return;
+  const moved=(i.store||'')!==editStore;
+  if(i.text!==t||moved){i.text=t;if(moved){i.store=editStore;i.order=Date.now();}itemPut(i);}
+  closeItemSheet();rList();
+}
+function delEditItem(){
+  const i=st.list.find(x=>x.id===editItemId);if(!i)return;
+  closeItemSheet();itemDel(i.id);rList();
+  toast('Article supprimé',()=>{itemPut(i);rList();});
+}
+
+// ── Glisser-déposer (poignée ⠿) : réordonner, ou changer de magasin en déposant dans un autre groupe ──
+let drag=null;
+function dragStart(ev,id){
+  if(ev.button>0||drag)return;
+  ev.preventDefault();
+  const el=ev.currentTarget.closest('.it'),r=el.getBoundingClientRect();
+  const ghost=el.cloneNode(true);ghost.classList.add('it-float');
+  ghost.style.cssText=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+  document.body.appendChild(ghost);el.classList.add('it-placeholder');document.body.classList.add('dragging');
+  drag={id,el,ghost,dy:ev.clientY-r.top,x:ev.clientX,y:ev.clientY,pending:false,raf:0};
+  if(navigator.vibrate)navigator.vibrate(8);
+  document.addEventListener('pointermove',dragMove,{passive:false});
+  document.addEventListener('pointerup',dragEnd);document.addEventListener('pointercancel',dragEnd);
+  drag.raf=requestAnimationFrame(dragScroll);
+}
+function dragMove(ev){
+  if(!drag)return;ev.preventDefault();
+  drag.x=ev.clientX;drag.y=ev.clientY;drag.ghost.style.top=(ev.clientY-drag.dy)+'px';dragPlace();
+}
+// Défilement automatique quand on approche du haut ou du bas de l'écran
+function dragScroll(){
+  if(!drag)return;
+  const y=drag.y,h=innerHeight,v=y<100?-Math.ceil((100-y)/8):y>h-150?Math.ceil((y-h+150)/8):0;
+  if(v){scrollBy(0,v);dragPlace();}
+  drag.raf=requestAnimationFrame(dragScroll);
+}
+function dragPlace(){
+  const groups=[...document.querySelectorAll('#li-groups .group:not(.basket)')];if(!groups.length)return;
+  // Groupe le plus proche du doigt (fonctionne aussi avec la mise en colonnes sur tablette)
+  let best=null,bd=Infinity;
+  for(const gEl of groups){const r=gEl.getBoundingClientRect();const dx=Math.max(r.left-drag.x,0,drag.x-r.right),dy=Math.max(r.top-drag.y,0,drag.y-r.bottom),d=dx*dx+dy*dy;if(d<bd){bd=d;best=gEl;}}
+  const body=best.querySelector('.g-body');
+  const items=[...body.querySelectorAll('.it:not(.it-placeholder)')];
+  const target=items.find(it=>{const r=it.getBoundingClientRect();return drag.y<r.top+r.height/2;});
+  if(target){if(target.previousElementSibling!==drag.el)body.insertBefore(drag.el,target);}
+  else if(body.lastElementChild!==drag.el)body.appendChild(drag.el);
+}
+function dragEnd(){
+  if(!drag)return;
+  document.removeEventListener('pointermove',dragMove);document.removeEventListener('pointerup',dragEnd);document.removeEventListener('pointercancel',dragEnd);
+  cancelAnimationFrame(drag.raf);drag.ghost.remove();drag.el.classList.remove('it-placeholder');document.body.classList.remove('dragging');
+  // Lit le nouvel ordre affiché et n'enregistre que ce qui a changé
+  document.querySelectorAll('#li-groups .group:not(.basket) .g-body').forEach(body=>{
+    const store=body.dataset.store||'';
+    [...body.querySelectorAll('.it')].forEach((el,k)=>{
+      const i=st.list.find(x=>x.id===+el.dataset.id);if(!i)return;
+      if((i.store||'')!==store||i.order!==k){i.store=store;i.order=k;itemPut(i);}
+    });
+  });
+  drag=null;rList();
+}
+
 function rBadge(){const n=st.list.filter(i=>!i.done).length,b=document.getElementById('badge');b.hidden=!n;b.textContent=n;}
 function addItem(){
   const inp=document.getElementById('li-input'),t=inp.value.trim();if(!t)return;
-  itemPut({id:newId(),text:t,done:false,store:liStore});
+  itemPut({id:newId(),text:t,done:false,store:liStore,order:Date.now()});
   inp.value='';rList();inp.focus();
 }
 function tglItem(id){const i=st.list.find(x=>x.id===id);if(i){i.done=!i.done;itemPut(i);rList();}}
@@ -974,7 +1077,7 @@ async function sendLink(){
   try{if(navigator.share){await navigator.share({title:'PandaCourses',text:'Rejoins notre espace courses partagé 🐼',url});return;}}catch(e){if(e&&e.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(url);toast('Lien copié');}catch(e){prompt('Copiez ce lien :',url);}
 }
-function refresh(){rBadge();if(view==='saisir')rBal();else if(view==='journal')rJournal();else if(view==='liste')rList();}
+function refresh(){if(drag)return;rBadge();if(view==='saisir')rBal();else if(view==='journal')rJournal();else if(view==='liste')rList();}
 function rMe(){
   const b=document.getElementById('me-btn');if(!b)return;
   const dot=sync.hid?`<span class="sync-dot ${sync.state}" title="${{on:'Synchronisé',offline:'Hors-ligne',connecting:'Connexion…',error:'Erreur de synchronisation'}[sync.state]||''}"></span>`:'';
