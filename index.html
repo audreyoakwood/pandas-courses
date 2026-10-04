@@ -302,6 +302,9 @@
   .sh-code { padding: 12px; border-radius: 16px; background: var(--grad-soft); text-align: center; font-size: 1.15rem; font-weight: 600; letter-spacing: 0.08em; user-select: all; -webkit-user-select: all; }
   .sh-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
   .app-ver { margin-top: 18px; text-align: center; font-size: 0.74rem; color: var(--ink-3); }
+  .sh-hint { margin-top: 8px; font-size: 0.82rem; color: var(--ink-2); }
+  #fam-in { text-transform: none; letter-spacing: normal; }
+  .sh-go { width: auto; padding: 12px 18px; }
   .sh-err { margin-top: 10px; font-size: 0.88rem; color: var(--neg); font-weight: 500; }
 
   /* ── Adaptation aux appareils ── */
@@ -498,7 +501,7 @@
     <p>Vos dépenses seront attribuées à cette personne par défaut. Vous pourrez toujours choisir l'autre au moment de la saisie.</p>
     <div class="who"><button class="a" onclick="setMe(0)"><span class="av a">A</span>Audrey</button><button class="t" onclick="setMe(1)"><span class="av t">T</span>Tom</button></div>
     <div class="share" id="share-box" hidden></div>
-    <div class="app-ver">PandaCourses · version 17</div>
+    <div class="app-ver">PandaCourses · version 18</div>
   </div>
 </div>
 
@@ -977,9 +980,6 @@ function clean(o){return JSON.parse(JSON.stringify(o));}
 function expKey(e){return [e.date,e.store,e.amount,e.partner,e.comment||''].join('|');}
 function itemKey(i){return String(i.text).trim().toLowerCase();}
 function fmtCode(h){return h.match(/.{1,4}/g).join('-');}
-function normCode(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
-function genCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(16);crypto.getRandomValues(r);return [...r].map(x=>A[x%32]).join('');}
-function shareUrl(){return location.origin+location.pathname+'#rejoindre='+sync.hid;}
 function syncErr(e){console.error(e);sync.err=String(e&&e.message||e);setSyncState('error');}
 function setSyncState(s){sync.state=s;rMe();rShare();}
 
@@ -1038,44 +1038,45 @@ async function seedRemote(){
   await pushAll(h,'exp',SEED.filter(e=>ids.includes(e.id)&&!have.has(expKey(e))).map(e=>({...e,id:newId()})));
   await f.setDoc(fd,{seedV:SEED_V},{merge:true});
 }
-// Premier téléphone : crée l'espace partagé et y envoie toutes ses données
-async function createSpace(){
-  const hid=genCode();setSyncState('connecting');
-  try{
-    await loadFirebase();const f=sync.f,db=sync.dbi;
-    await f.setDoc(f.doc(db,'foyers',hid),{vir:clean(st.vir),seedV:SEED_V,cree:f.serverTimestamp()});
-    await pushAll(hid,'exp',st.exp);await pushAll(hid,'list',st.list);
-    try{localStorage.setItem(SYNC_KEY,hid);}catch(e){}
-    await startSync(hid);toast('Espace partagé créé');
-  }catch(e){sync.hid=null;syncErr(e);}
+// ── Code du foyer : vous choisissez un code et le tapez sur les deux téléphones ──
+// Le code est transformé en identifiant (empreinte SHA-256) : même code = mêmes données.
+const CODE_KEY='pandacourses-code';
+function normFamily(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ');}
+async function familyId(code){
+  const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pandacourses|'+normFamily(code))));
+  const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return [...h.slice(0,16)].map(x=>A[x%32]).join('');
 }
-// Second téléphone : rejoint l'espace et y ajoute seulement ce qui n'y est pas déjà
-async function joinSpace(code){
-  const hid=normCode(code);
-  if(hid.length!==16){sync.err='Le code doit contenir 16 caractères.';setSyncState('error');return;}
+// Ajoute dans le foyer ce que ce téléphone a en plus (sans doublons, avec de nouveaux identifiants)
+async function mergeInto(hid){
+  const f=sync.f,db=sync.dbi;
+  const [ex,li]=await Promise.all([f.getDocs(f.collection(db,'foyers',hid,'exp')),f.getDocs(f.collection(db,'foyers',hid,'list'))]);
+  const haveE=new Set(ex.docs.map(d=>expKey(d.data()))),haveL=new Set(li.docs.map(d=>itemKey(d.data())));
+  await pushAll(hid,'exp',st.exp.filter(e=>!haveE.has(expKey(e))).map(e=>({...e,id:newId()})));
+  await pushAll(hid,'list',st.list.filter(i=>!haveL.has(itemKey(i))).map(i=>({...i,id:newId()})));
+}
+async function connectFamily(code,create){
+  sync.newCode=null;
+  if(normFamily(code).length<6){sync.err='Choisissez un code d\'au moins 6 caractères.';setSyncState('error');return;}
   setSyncState('connecting');
   try{
-    await loadFirebase();const f=sync.f,db=sync.dbi;
-    const h=await f.getDoc(f.doc(db,'foyers',hid));
-    if(!h.exists()){sync.err='Code inconnu. Vérifiez-le sur l\'autre téléphone.';setSyncState('error');return;}
-    const [ex,li]=await Promise.all([f.getDocs(f.collection(db,'foyers',hid,'exp')),f.getDocs(f.collection(db,'foyers',hid,'list'))]);
-    const haveE=new Set(ex.docs.map(d=>expKey(d.data()))),haveL=new Set(li.docs.map(d=>itemKey(d.data())));
-    // Nouveaux identifiants pour éviter toute collision avec ceux de l'autre téléphone
-    await pushAll(hid,'exp',st.exp.filter(e=>!haveE.has(expKey(e))).map(e=>({...e,id:newId()})));
-    await pushAll(hid,'list',st.list.filter(i=>!haveL.has(itemKey(i))).map(i=>({...i,id:newId()})));
-    try{localStorage.setItem(SYNC_KEY,hid);}catch(e){}
-    await startSync(hid);document.getElementById('who-sheet').classList.remove('on');toast('Téléphones reliés');
+    const hid=await familyId(code);
+    await loadFirebase();const f=sync.f,db=sync.dbi,fd=f.doc(db,'foyers',hid);
+    const h=await f.getDoc(fd);
+    if(!h.exists()){
+      // Aucun foyer avec ce code : on demande confirmation (évite d'en créer un nouveau sur une faute de frappe)
+      if(!create){sync.newCode=code;setSyncState('off');return;}
+      await f.setDoc(fd,{vir:clean(st.vir),seedV:SEED_V,cree:f.serverTimestamp()});
+      await pushAll(hid,'exp',st.exp);await pushAll(hid,'list',st.list);
+    }else await mergeInto(hid);
+    try{localStorage.setItem(SYNC_KEY,hid);localStorage.setItem(CODE_KEY,code.trim());}catch(e){}
+    await startSync(hid);document.getElementById('who-sheet').classList.remove('on');
+    toast(h.exists()?'Téléphones reliés':'Foyer créé : tapez le même code sur l\'autre téléphone');
   }catch(e){syncErr(e);}
 }
 function leaveSpace(){
   if(!confirm('Ne plus partager sur ce téléphone ? Les données restent sur l\'autre téléphone.'))return;
-  try{localStorage.removeItem(SYNC_KEY);}catch(e){}
-  location.hash='';location.reload();
-}
-async function sendLink(){
-  const url=shareUrl();
-  try{if(navigator.share){await navigator.share({title:'PandaCourses',text:'Rejoins notre espace courses partagé 🐼',url});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-  try{await navigator.clipboard.writeText(url);toast('Lien copié');}catch(e){prompt('Copiez ce lien :',url);}
+  try{localStorage.removeItem(SYNC_KEY);localStorage.removeItem(CODE_KEY);}catch(e){}
+  location.reload();
 }
 function refresh(){if(drag)return;rBadge();if(view==='saisir')rBal();else if(view==='journal')rJournal();else if(view==='liste')rList();}
 function rMe(){
@@ -1089,30 +1090,32 @@ function rShare(){
   el.hidden=false;
   const err=sync.state==='error'&&sync.err?`<div class="sh-err">${esc(sync.err)}</div>`:'';
   if(sync.hid){
+    let code='';try{code=localStorage.getItem(CODE_KEY)||'';}catch(e){}
     const lab={on:'✓ Synchronisé avec l\'autre téléphone',offline:'Hors-ligne : les changements partiront au retour du réseau',connecting:'Connexion…',error:'Problème de synchronisation'}[sync.state]||'';
     el.innerHTML=`<h3>🔗 Partage</h3><div class="sh-state ${sync.state}">${lab}</div>
-      <div class="sh-code num">${fmtCode(sync.hid)}</div>
-      <div class="sh-acts"><button class="sh-main" onclick="sendLink()">Envoyer le lien à l'autre téléphone</button><button class="sh-sec" onclick="leaveSpace()">Ne plus partager</button></div>${err}`;
+      <div class="sh-code">${esc(code||fmtCode(sync.hid))}</div>
+      <div class="sh-hint">${code?'Code du foyer : tapez-le sur l\'autre téléphone pour le relier.':'Relié avec l\'ancien système de partage.'}</div>
+      <div class="sh-acts"><button class="sh-sec" onclick="leaveSpace()">Ne plus partager</button></div>${err}`;
+  }else if(sync.newCode){
+    el.innerHTML=`<h3>🔗 Nouveau foyer ?</h3>
+      <p>Aucun foyer n'utilise encore le code <b>${esc(sync.newCode)}</b>. Si c'est le premier téléphone, créez-le ; sinon, vérifiez le code tapé sur l'autre téléphone.</p>
+      <div class="sh-acts"><button class="sh-main" onclick="connectFamily(sync.newCode,true)">Créer ce foyer</button><button class="sh-sec" onclick="sync.newCode=null;rShare()">Corriger le code</button></div>`;
   }else{
     const busy=sync.state==='connecting';
     el.innerHTML=`<h3>🔗 Partager avec l'autre téléphone</h3>
-      <p>La liste, les dépenses et les virements seront les mêmes sur vos deux téléphones, en temps réel.</p>
-      <button class="sh-main" onclick="createSpace()" ${busy?'disabled':''}>${busy?'Connexion…':'Créer un espace partagé'}</button>
-      <div class="sh-or">ou, si l'autre téléphone l'a déjà créé :</div>
-      <div class="sh-join"><input id="join-in" placeholder="Code (ex. ABCD-EFGH-…)" autocapitalize="characters" value="${esc(pendingJoin||'')}"><button class="sh-sec" onclick="joinSpace(document.getElementById('join-in').value)" ${busy?'disabled':''}>Rejoindre</button></div>${err}`;
+      <p>Choisissez un <b>code du foyer</b> et tapez-le sur vos deux téléphones : même code = même liste et mêmes dépenses, en temps réel.</p>
+      <div class="sh-join"><input id="fam-in" placeholder="ex. pandas-audrey-tom" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="go" onkeydown="if(event.key==='Enter')connectFamily(this.value)"><button class="sh-main sh-go" onclick="connectFamily(document.getElementById('fam-in').value)" ${busy?'disabled':''}>${busy?'…':'Relier'}</button></div>
+      <div class="sh-hint">Au moins 6 caractères. Gardez-le pour vous : il sert de clé d'accès.</div>${err}`;
   }
 }
-let pendingJoin='';
 
 // ── Démarrage ──
 load();
 document.getElementById('logo').innerHTML=PANDA;
 c.payer=me??0;rKeypad();rSaisir();rBadge();
 {
-  const m=location.hash.match(/rejoindre=([A-Za-z0-9-]+)/);
   let saved=null;try{saved=localStorage.getItem(SYNC_KEY);}catch(e){}
   if(syncCfg()&&saved)startSync(saved);
-  else if(syncCfg()&&m){pendingJoin=fmtCode(normCode(m[1]));history.replaceState(null,'',location.pathname);openWho();}
 }
 if(me===null)openWho();
 </script>
